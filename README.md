@@ -6,8 +6,7 @@ This program I have written to export all of my Oruxmaps tracks as GPX files for
 
 ## Usage
 
-Locate the file oruxmapstracks.db on your Android mobile and copy it to a temporary folder on your PC.
-On your mobile phone, you usually find oruxmapstracks.db in /sdcard/oruxmaps. Open a command / shell window on your PC, "cd" to the temporary folder and call the python script omexport.py:
+Locate the file /sdcard/oruxmaps/oruxmapstracks.db on your Android mobile and copy it to a temporary folder on your PC. Open a command or shell window on your PC, "cd" to the temporary folder and call the python script omexport.py:
 
 ```bash
 cd my_temporary_folder
@@ -21,12 +20,16 @@ Alternatively specify the location of input database file and output track direc
 python omexport.py --database my/input-directory/oxuxmapstracks.db --tracks my/output-directory/tracks
 ````
 
+All Oruxmaps-tracks are exported to indvidual GPX files. The GPX files are named by their track name prefixed by their track ID. If you have made use of track folders in Oruxmaps, the output files are also organised in a folder structure.
+
 ## Requirements
 
+Omexport is based on Python 3.X and the great GPXpy library: 
+
 ```
-git clone pip install gpxpy
+pip install gpxpy
 ```
 
 ## License
-omexport is license under [MIT-License] (https://en.wikipedia.org/wiki/MIT_License)
+Omexport is licensed under [MIT-License](https://en.wikipedia.org/wiki/MIT_License)
 
