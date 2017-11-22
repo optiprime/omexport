@@ -109,7 +109,7 @@ class OmExport:
         filename = "{0}/{1:0>8}_{2}.gpx".format(output_sub_dir, track_id,
                                                 sanitize_filename(track_name))
         try:
-            with open(filename, 'w') as file:
+            with open(filename, 'w', encoding='utf-8') as file:
                 file.write(gpx)
         except OSError as ex:
             print('Error: Cannot write file {}: {} - using track-ID as name'.format(filename, ex))
@@ -117,7 +117,7 @@ class OmExport:
             filename = "{0}/{1:0>8}.gpx".format(output_sub_dir, track_id)
 
             try:
-                with open(filename, 'w') as file:
+                with open(filename, 'w', encoding='utf-8') as file:
                     file.write(gpx)
             except OSError as ex:
                 print('Error: Cannot write file {}: {} - skipping track.'.format(filename, ex))
