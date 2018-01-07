@@ -79,7 +79,7 @@ class OmExport:
             print('Exporting track {} / {}'.format(track_folder, track_name))
 
             output_sub_dir = self.output_dir
-            if not track_folder == '' and not track_folder == '---':
+            if track_folder != None and track_folder != '' and track_folder != '---':
                 output_sub_dir += '/' + sanitize_filename(track_folder)
 
             if not os.path.exists(output_sub_dir):
@@ -130,7 +130,7 @@ class OmExport:
 
             if  not track_folder == '' and not track_folder == '---':
                 track_name = '{} - {}'.format(track_folder, track_name)
-            
+
             self.add_track_to_gpx(track_id, track_name, track_description, gpx)
 
         tracks.close()
@@ -140,7 +140,7 @@ class OmExport:
                 file.write(gpx.to_xml())
         except OSError as ex:
             print('Error: Cannot write file {}: {} - using track-ID as name'.
-                    format(self.output_file, ex))
+                  format(self.output_file, ex))
 
 
     def add_track_to_gpx(self, track_id, track_name, track_description, gpx):
