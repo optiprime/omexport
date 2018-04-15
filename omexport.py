@@ -169,7 +169,7 @@ class OmExport:
                     gpxpy.gpx.GPXTrackPoint(
                         point_row['trkptlat'], point_row['trkptlon'],
                         elevation=point_row['trkptalt'],
-                        time=datetime.datetime.fromtimestamp(point_row['trkpttime'] / 1000.0)))
+                        time=datetime.datetime.fromtimestamp((point_row['trkpttime'] or 0) / 1000.0)))
 
         points.close()
         segments.close()
