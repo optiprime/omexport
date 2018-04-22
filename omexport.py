@@ -56,7 +56,7 @@ class OmExport:
         self.database.close()
 
 
-    def write_individual_tracks(self):
+    def write_individual_tracks(self, force):
         "Write all database tracks to individual GPX files in sub-folders"
 
         if not os.path.exists(self.output_dir):
@@ -76,8 +76,6 @@ class OmExport:
             track_name = row['trackname']
             track_description = row['trackdescr']
 
-            print('Exporting track {} / {}'.format(track_folder, track_name))
-
             output_sub_dir = self.output_dir
             if track_folder != None and track_folder != '' and track_folder != '---':
                 output_sub_dir += '/' + sanitize_filename(track_folder)
@@ -89,11 +87,17 @@ class OmExport:
                     # if track folder sub-directory cannot be created, use main output directory instead
                     output_sub_dir = self.output_dir
 
+            filename = "{0}/{1:0>8}_{2}.gpx".format(output_sub_dir, track_id,
+                                                    sanitize_filename(track_name))
+
+            if not force and os.path.exists(filename):
+                continue
+
+            print('Exporting track {} / {}'.format(track_folder, track_name))
+                
             gpx = gpxpy.gpx.GPX()
             self.add_track_to_gpx(track_id, track_name, track_description, gpx)
 
-            filename = "{0}/{1:0>8}_{2}.gpx".format(output_sub_dir, track_id,
-                                                    sanitize_filename(track_name))
             try:
                 with open(filename, 'w', encoding='utf-8') as file:
                     file.write(gpx.to_xml())
@@ -128,7 +132,7 @@ class OmExport:
 
             print('Exporting track {} / {}'.format(track_folder, track_name))
 
-            if  not track_folder == '' and not track_folder == '---':
+            if not track_folder == '' and not track_folder == '---':
                 track_name = '{} - {}'.format(track_folder, track_name)
 
             self.add_track_to_gpx(track_id, track_name, track_description, gpx)
@@ -165,11 +169,16 @@ class OmExport:
                             order by _id''', (segment_row['_id'],))
 
             for point_row in points:
+                if point_row['trkpttime']:
+                    trkpttime = datetime.datetime.fromtimestamp((point_row['trkpttime']) / 1000.0)
+                else:
+                    trkpttime = datetime.datetime.min
+
                 gpx_segment.points.append(
                     gpxpy.gpx.GPXTrackPoint(
                         point_row['trkptlat'], point_row['trkptlon'],
                         elevation=point_row['trkptalt'],
-                        time=datetime.datetime.fromtimestamp((point_row['trkpttime'] or 0) / 1000.0)))
+                        time=trkpttime))
 
         points.close()
         segments.close()
@@ -192,7 +201,10 @@ def main():
                         help='the output directory (if running in "individual" mode)')
     parser.add_argument('--track',
                         default='tracks.gpx',
-                        help='the output track (if running in )')
+                        help='the output track (if running in "combined" mode)')
+    parser.add_argument('--force',
+                        default=False,
+                        help='force the export of individual GPX files even if they already exist')
     args = parser.parse_args()
 
     ome = OmExport(args.database, args.tracks, args.track)
@@ -200,7 +212,7 @@ def main():
     if args.combined:
         ome.write_combined_track()
     else:
-        ome.write_individual_tracks()
+        ome.write_individual_tracks(args.force)
 
 
 if __name__ == "__main__":
