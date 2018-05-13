@@ -67,7 +67,7 @@ class OmExport:
                 return
 
         tracks = self.database.cursor()
-        tracks.execute('''select _id, trackfolder, trackname, trackdescr from tracks
+        tracks.execute('''select _id, trackfolder, trackname, trackdescr, trackfechaini from tracks
                           order by trackfolder, _id''')
 
         for row in tracks:
@@ -75,6 +75,7 @@ class OmExport:
             track_folder = row['trackfolder']
             track_name = row['trackname']
             track_description = row['trackdescr']
+            track_datetime = row['trackfechaini']
 
             output_sub_dir = self.output_dir
             if track_folder != None and track_folder != '' and track_folder != '---':
@@ -111,6 +112,13 @@ class OmExport:
                         file.write(gpx.to_xml())
                 except OSError as ex:
                     print('Error: Cannot write file {}: {} - skipping track.'.format(filename, ex))
+
+            if track_datetime:
+                try:
+                    file_time = track_datetime / 1000
+                    os.utime(filename, (file_time, file_time))
+                except OSError as ex:
+                    print('Error: Cannot change atime/mtime on file {}: {}'.format(filename, ex))
 
         tracks.close()
 
