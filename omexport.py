@@ -56,7 +56,7 @@ class OmExport:
         self.database.close()
 
 
-    def write_individual_tracks(self, force):
+    def write_individual_tracks(self, force, write_folder_file):
         "Write all database tracks to individual GPX files in sub-folders"
 
         if not os.path.exists(self.output_dir):
@@ -66,20 +66,18 @@ class OmExport:
                 print("Fatal: Cannot create output directory {}: {}".format(self.output_dir, ex))
                 return
 
-        tracks = self.database.cursor()
-        tracks.execute('''select _id, trackfolder, trackname, trackdescr, trackfechaini from tracks
-                          order by trackfolder, _id''')
-
-        for row in tracks:
-            track_id = row['_id']
-            track_folder = row['trackfolder']
-            track_name = row['trackname']
-            track_description = row['trackdescr']
-            track_datetime = row['trackfechaini']
-
+        track_folders = self.database.cursor()
+        track_folders.execute('''select distinct trackfolder from tracks order by trackfolder''')
+        
+        for track_folder in track_folders:
             output_sub_dir = self.output_dir
-            if track_folder != None and track_folder != '' and track_folder != '---':
-                output_sub_dir += '/' + sanitize_filename(track_folder)
+            output_folder_file = None
+            folder_gpx = None
+            if track_folder['trackfolder'] != None and track_folder['trackfolder'] != '' and track_folder['trackfolder'] != '---':
+                output_sub_dir += '/' + sanitize_filename(track_folder['trackfolder'])
+                output_folder_file = output_sub_dir + '.gpx'
+                folder_gpx = gpxpy.gpx.GPX()
+                folder_gpx.name = track_folder['trackfolder']
 
             if not os.path.exists(output_sub_dir):
                 try:
@@ -87,41 +85,62 @@ class OmExport:
                 except OSError:
                     # if track folder sub-directory cannot be created, use main output directory instead
                     output_sub_dir = self.output_dir
+            
+            tracks = self.database.cursor()
+            tracks.execute('''select _id, trackname, trackdescr, trackfechaini from tracks where trackfolder = '%s' order by _id'''
+                    % track_folder['trackfolder'])
+            
+            have_new_track = False
+            for track in tracks:
+                track_id = track['_id']
+                track_name = track['trackname']
+                track_description = track['trackdescr']
+                track_datetime = track['trackfechaini']
 
-            filename = "{0}/{1:0>8}_{2}.gpx".format(output_sub_dir, track_id,
-                                                    sanitize_filename(track_name))
+                filename = "{0}/{1:0>8}_{2}.gpx".format(output_sub_dir, track_id, sanitize_filename(track_name))
 
-            if not force and os.path.exists(filename):
-                continue
+                if not force and os.path.exists(filename):
+                    continue
 
-            print('Exporting track {} / {}'.format(track_folder, track_name))
-                
-            gpx = gpxpy.gpx.GPX()
-            self.add_track_to_gpx(track_id, track_name, track_description, gpx)
+                have_new_track = True
 
-            try:
-                with open(filename, 'w', encoding='utf-8') as file:
-                    file.write(gpx.to_xml())
-            except OSError as ex:
-                print('Error: Cannot write file {}: {} - using track-ID as name'.format(filename, ex))
-
-                filename = "{0}/{1:0>8}.gpx".format(output_sub_dir, track_id)
+                print('Exporting track {} / {}'.format(track_folder['trackfolder'], track_name))
+                    
+                gpx = gpxpy.gpx.GPX()
+                self.add_track_to_gpx(track_id, track_name, track_description, gpx)
 
                 try:
                     with open(filename, 'w', encoding='utf-8') as file:
                         file.write(gpx.to_xml())
                 except OSError as ex:
-                    print('Error: Cannot write file {}: {} - skipping track.'.format(filename, ex))
+                    print('Error: Cannot write file {}: {} - using track-ID as name'.format(filename, ex))
+                    filename = "{0}/{1:0>8}.gpx".format(output_sub_dir, track_id)
+                    try:
+                        with open(filename, 'w', encoding='utf-8') as file:
+                            file.write(gpx.to_xml())
+                    except OSError as ex:
+                        print('Error: Cannot write file {}: {} - skipping track.'.format(filename, ex))
 
-            if track_datetime:
+                if track_datetime:
+                    try:
+                        file_time = track_datetime / 1000
+                        os.utime(filename, (file_time, file_time))
+                    except OSError as ex:
+                        print('Error: Cannot change atime/mtime on file {}: {}'.format(filename, ex))
+                
+                if write_folder_file and output_folder_file:
+                    self.add_track_to_gpx(track_id, track_name, track_description, folder_gpx)
+
+            tracks.close()
+
+            if have_new_track and write_folder_file and output_folder_file:
                 try:
-                    file_time = track_datetime / 1000
-                    os.utime(filename, (file_time, file_time))
+                    with open(output_folder_file, 'w', encoding='utf-8') as file:
+                        file.write(folder_gpx.to_xml())
                 except OSError as ex:
-                    print('Error: Cannot change atime/mtime on file {}: {}'.format(filename, ex))
+                    print('Error: Cannot write file {}: {}'.format(output_folder_file, ex))
 
-        tracks.close()
-
+        track_folders.close()
 
     def write_combined_track(self):
         "Write all database tracks to one GPX file"
@@ -129,9 +148,8 @@ class OmExport:
         gpx = gpxpy.gpx.GPX()
 
         tracks = self.database.cursor()
-        tracks.execute('''select _id, trackfolder, trackname, trackdescr from tracks
-                          order by trackfolder, _id''')
-
+        tracks.execute('''select _id, trackfolder, trackname, trackdescr from tracks order by trackfolder, _id''')
+        
         for row in tracks:
             track_id = row['_id']
             track_name = row['trackname']
@@ -201,6 +219,10 @@ def main():
                         default=False,
                         action='store_true',
                         help='write one GPX file containing all tracks instead of one GPX file for each track')
+    parser.add_argument('--folder-file',
+                        default=False,
+                        action='store_true',
+                        help='write also one GPX file for each folder')
     parser.add_argument('--database',
                         default='oruxmapstracks.db',
                         help='the oruxmapstracks.db database file')
@@ -212,6 +234,7 @@ def main():
                         help='the output track (if running in "combined" mode)')
     parser.add_argument('--force',
                         default=False,
+                        action='store_true',
                         help='force the export of individual GPX files even if they already exist')
     args = parser.parse_args()
 
@@ -220,7 +243,7 @@ def main():
     if args.combined:
         ome.write_combined_track()
     else:
-        ome.write_individual_tracks(args.force)
+        ome.write_individual_tracks(args.force, args.folder_file)
 
 
 if __name__ == "__main__":

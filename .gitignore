@@ -1,5 +1,7 @@
 .vscode
+__pycache__/
 oruxmapstracks.db
 tracks/
 tracks.gpx
 my-*
+

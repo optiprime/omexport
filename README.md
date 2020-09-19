@@ -20,9 +20,9 @@ Alternatively specify the location of input database file and output tracks dire
 
 ```bash
 python omexport.py --database my/input-directory/oxuxmapstracks.db --tracks my/output-directory/tracks
-````
+```
 
-All Oruxmaps-tracks are exported to indvidual GPX files. The GPX files are named by their track name prefixed by their track ID. If you have made use of track folders in Oruxmaps, the output files are also organised in a folder structure.
+All Oruxmaps-tracks are exported to indvidual GPX files. The GPX files are named by their track name prefixed by their track ID. If you have made use of track folders in Oruxmaps, the output files are also organised in a folder structure. Using the option ```--folder-file``` you can write an additional GPX file (folder.gpx) for each folder, containing all tracks of this folder.
 
 ### Writing one GPX file containing all tracks
 
@@ -36,9 +36,9 @@ Alternatively specify the location of input database file and output GPX file:
 
 ```bash
 python omexport.py --combine --database my/input-directory/oxuxmapstracks.db --track my_output_tracks.gpx
-````
+```
 
-All Oruxmaps-tracks are exported to one GPX file. The GPX file contains a track list. Tracks are named by their track name prefixed by their track folder name (if available).
+All Oruxmaps-tracks are exported to one GPX file. The GPX file contains a track list. Tracks are named by their track name prefixed by their track folder name (if available). This GPX file can be dragged and dropped to Google Earth.
 
 ## Requirements
 
@@ -50,4 +50,3 @@ pip install gpxpy
 
 ## License
 Omexport is licensed under [MIT-License](https://en.wikipedia.org/wiki/MIT_License)
-
