@@ -92,6 +92,16 @@ class OmExport:
             
             have_new_track = False
             for track in tracks:
+                filename = "{0}/{1:0>8}_{2}.gpx".format(output_sub_dir, track['_id'], sanitize_filename(track['trackname']))
+                if not os.path.exists(filename):
+                    have_new_track = True
+                    break
+
+            tracks = self.database.cursor()
+            tracks.execute('''select _id, trackname, trackdescr, trackfechaini from tracks where trackfolder = '%s' order by _id'''
+                    % track_folder['trackfolder'])
+            
+            for track in tracks:
                 track_id = track['_id']
                 track_name = track['trackname']
                 track_description = track['trackdescr']
@@ -99,10 +109,11 @@ class OmExport:
 
                 filename = "{0}/{1:0>8}_{2}.gpx".format(output_sub_dir, track_id, sanitize_filename(track_name))
 
+                if (force or have_new_track) and write_folder_file and output_folder_file:
+                    self.add_track_to_gpx(track_id, track_name, track_description, folder_gpx)
+                
                 if not force and os.path.exists(filename):
                     continue
-
-                have_new_track = True
 
                 print('Exporting track {} / {}'.format(track_folder['trackfolder'], track_name))
                     
@@ -128,12 +139,11 @@ class OmExport:
                     except OSError as ex:
                         print('Error: Cannot change atime/mtime on file {}: {}'.format(filename, ex))
                 
-                if write_folder_file and output_folder_file:
-                    self.add_track_to_gpx(track_id, track_name, track_description, folder_gpx)
-
             tracks.close()
 
-            if have_new_track and write_folder_file and output_folder_file:
+            if (force or have_new_track) and write_folder_file and output_folder_file:
+                print('Exporting folder-track {}'.format(track_folder['trackfolder']))
+
                 try:
                     with open(output_folder_file, 'w', encoding='utf-8') as file:
                         file.write(folder_gpx.to_xml())
