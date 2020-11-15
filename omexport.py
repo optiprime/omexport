@@ -36,8 +36,11 @@ import gpxpy.gpx
 def sanitize_filename(string):
     "Replaces illegal characters in filename"
 
-    return string.replace('/', '--').replace('\\', '--').replace(
+    sanitized = string.replace('/', '--').replace('\\', '--').replace(
         ':', '-').replace('\r', ' ').replace('\n', ' ').replace('*', '+')
+    if sanitized == '':
+        sanitized = 'no name'
+    return sanitized
 
 
 class OmExport:
@@ -87,8 +90,11 @@ class OmExport:
                     output_sub_dir = self.output_dir
             
             tracks = self.database.cursor()
-            tracks.execute('''select _id, trackname, trackdescr, trackfechaini from tracks where trackfolder = '%s' order by _id'''
-                    % track_folder['trackfolder'])
+            if track_folder['trackfolder'] == None:
+                where_rule = "trackfolder is null"
+            else:
+                where_rule = "trackfolder = '{}'".format(track_folder['trackfolder'])
+            tracks.execute('''select _id, trackname, trackdescr, trackfechaini from tracks where %s order by _id''' % where_rule)
             
             have_new_track = False
             for track in tracks:
@@ -98,8 +104,7 @@ class OmExport:
                     break
 
             tracks = self.database.cursor()
-            tracks.execute('''select _id, trackname, trackdescr, trackfechaini from tracks where trackfolder = '%s' order by _id'''
-                    % track_folder['trackfolder'])
+            tracks.execute('''select _id, trackname, trackdescr, trackfechaini from tracks where %s order by _id''' % where_rule)
             
             for track in tracks:
                 track_id = track['_id']
@@ -115,8 +120,11 @@ class OmExport:
                 if not force and os.path.exists(filename):
                     continue
 
-                print('Exporting track {} / {}'.format(track_folder['trackfolder'], track_name))
-                    
+                if track_folder['trackfolder'] == None:
+                    print('Exporting track {}'.format(track_name))
+                else:
+                    print('Exporting track {} / {}'.format(track_folder['trackfolder'], track_name))
+
                 gpx = gpxpy.gpx.GPX()
                 self.add_track_to_gpx(track_id, track_name, track_description, gpx)
 
