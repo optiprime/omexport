@@ -226,6 +226,23 @@ class OmExport:
 
         points.close()
         segments.close()
+        
+        self.add_waypoints_to_gpx(track_id, gpx)
+               
+    
+    def add_waypoints_to_gpx(self, track_id, gpx):
+        "Reads track-related waypoints from database and appends them to current GPX object"
+
+        pois = self.database.cursor()
+        pois.execute('''select poilat, poilon, poiname from pois
+                            where poitrack = ?''', (track_id,))
+
+        for poi_row in pois:
+            waypoint = gpxpy.gpx.GPXWaypoint(latitude=poi_row['poilat'], longitude=poi_row['poilon'],
+                                             name=poi_row['poiname'])
+            gpx.waypoints.append(waypoint)
+
+        pois.close()
 
 
 def main():

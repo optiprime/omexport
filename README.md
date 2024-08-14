@@ -24,6 +24,8 @@ python omexport.py --database my/input-directory/oxuxmapstracks.db --tracks my/o
 
 All Oruxmaps-tracks are exported to indvidual GPX files. The GPX files are named by their track name prefixed by their track ID. If you have made use of track folders in Oruxmaps, the output files are also organised in a folder structure. Using the option ```--folder-file``` you can write an additional GPX file (folder.gpx) for each folder, containing all tracks of this folder.
 
+Waypoints related to tracks will also be included in the resulting GPX files.
+
 ### Writing one GPX file containing all tracks
 
 ```bash
@@ -44,9 +46,10 @@ All Oruxmaps-tracks are exported to one GPX file. The GPX file contains a track 
 
 Omexport is based on Python 3.X and the great GPXpy library: 
 
-```
+```bash
 pip install gpxpy
 ```
 
 ## License
+
 Omexport is licensed under [MIT-License](https://en.wikipedia.org/wiki/MIT_License)
